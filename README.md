@@ -116,7 +116,7 @@ Maintain layout consistency across dashboards
 
 Fix navigation flow between pages
 
-
+# Please create your Branch and push your code with branch.
 
 ---
 
@@ -133,7 +133,7 @@ Fix table overflow and alignment issues
 Add hover effects and transitions
 
 
-
+# Please create your Branch and push your code with branch.
 ---
 
 👤 Imran – JavaScript Logic & Interaction Lead
@@ -149,12 +149,10 @@ Implement role-based UI visibility
 Enhance timetable rendering logic
 
 
-
+# Please create your Branch and push your code with branch.
 ---
 
-👤 Faizan – UX, Testing & Final Review Lead
-
-Responsibilities:
+👤 Faizan – UX, Testing & Final Review Lead Responsibilities:
 
 Test all pages and interactions
 
@@ -165,7 +163,7 @@ Improve accessibility and readability
 Final bug fixing and UI review
 
 
-
+# Please create your Branch and push your code with branch.
 ---
 
 ✅ Completion Criteria
