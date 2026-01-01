@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <div id="navbar-container"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 bg-white sidebar p-3 d-none d-md-block">
+                <h5>Admin Menu</h5>
+                <hr>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a href="#" class="nav-link active" onclick="switchTab('teachers')">Manage Teachers</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('timetable')">Timetable</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link" onclick="switchTab('reports')">Attendance Reports</a></li>
+                </ul>
+            </div>
+
+            <!-- Content -->
+            <div class="col-md-10 p-4">
+                
+                <!-- Teachers Section -->
+                <div id="section-teachers" class="mb-5">
+                    <h3>Manage Teachers</h3>
+                    <div class="card p-3 mb-3">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="teachersTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timetable Section -->
+                <div id="section-timetable" class="mb-5 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Main Timetable</h3>
+                        <button class="btn btn-success" onclick="generateNewTimetable()">Generate New Timetable</button>
+                    </div>
+                    <div id="timetable-container"></div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="section-reports" class="mb-5 d-none">
+                    <h3>Attendance & Shuffles</h3>
+                    
+                    <h5 class="mt-4">Substitution Log</h5>
+                    <ul class="list-group mb-4" id="shuffleLogList"></ul>
+
+                    <h5 class="mt-4">Attendance Records</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="attendanceTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Lecture ID</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Marked By</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/timetable.js"></script>
+    <script src="assets/js/attendance.js"></script>
+    <script src="assets/js/app.js"></script>
+
+    <script>
+        // Inline Admin Logic
+        
+        function renderTeachers() {
+            const teachers = DataManager.getTeachers();
+            const tbody = document.querySelector('#teachersTable tbody');
+            tbody.innerHTML = teachers.map(t => `
+                <tr>
+                    <td>${t.id}</td>
+                    <td>${t.name}</td>
+                    <td>${t.subject}</td>
+                    <td>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" 
+                                ${t.isPresent ? 'checked' : ''} 
+                                onchange="toggleTeacher('${t.id}', this.checked)">
+                            <label class="form-check-label">${t.isPresent ? 'Present' : 'Absent'}</label>
+                        </div>
+                    </td>
+                    <td><button class="btn btn-sm btn-danger" onclick="deleteTeacher('${t.id}')">Delete</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function toggleTeacher(id, isPresent) {
+            DataManager.updateTeacherStatus(id, isPresent);
+            if (!isPresent) {
+                TimetableManager.checkAndShuffle();
+                alert('Teacher marked Absent. Timetable Shuffled if necessary.');
+            }
+            renderAll();
+        }
+
+        function deleteTeacher(id) {
+            if(confirm('Are you sure?')) {
+                DataManager.deleteTeacher(id);
+                renderAll();
+            }
+        }
+
+        function generateNewTimetable() {
+            TimetableManager.generateTimetable();
+            renderAll();
+        }
+
+        function renderResources() {
+            // Shuffle Log
+            const logs = DataManager.getShuffledLogs();
+            const logList = document.getElementById('shuffleLogList');
+            if (logs.length === 0) logList.innerHTML = '<li class="list-group-item text-muted">No substitutions yet.</li>';
+            else {
+                logList.innerHTML = logs.map(l => `
+                    <li class="list-group-item list-group-item-warning">
+                        [${l.day} ${l.slot}] <strong>${l.originalTeacher}</strong> replaced by <strong>${l.newTeacher}</strong>
+                    </li>
+                `).join('');
+            }
+
+            // Attendance
+            const reports = AttendanceManager.getReport();
+            const attBody = document.querySelector('#attendanceTable tbody');
+            attBody.innerHTML = reports.map(r => `
+                <tr>
+                    <td>${r.date.split('T')[0]}</td>
+                    <td>${r.lectureId}</td>
+                    <td>${r.subject}</td>
+                    <td><span class="badge bg-${r.status === 'held' ? 'success' : 'danger'}">${r.status}</span></td>
+                    <td>${r.markedBy}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAll() {
+            renderTeachers();
+            App.renderTimetableGrid('timetable-container', DataManager.getTimetable(), false);
+            renderResources();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('d-none'));
+            document.getElementById(`section-${tab}`).classList.remove('d-none');
+            // update nav active state (simplified)
+        }
+
+        // Init
+        window.addEventListener('dataUpdated', renderAll);
+        renderAll();
+    </script>
+</body>
+</html>

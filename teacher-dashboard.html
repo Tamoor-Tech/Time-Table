@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <div id="navbar-container"></div>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card stat-card bg-white p-4">
+                    <h3>My Schedule</h3>
+                    <p class="text-muted">Detailed view of your assigned lectures and substitutions.</p>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <div id="my-timetable-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div class="modal fade" id="shuffleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">Schedule Update</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    You have been assigned a substitution class! Please check your timetable.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/app.js"></script>
+
+    <script>
+        const currentUser = Auth.getCurrentUser();
+        // Assuming teacherId is stored in user object in real app, but for demo we link via name or fix
+        // We stored teacherId in dummy user
+        const myTeacherId = currentUser.teacherId; 
+
+        function filterMyTimetable() {
+            const all = DataManager.getTimetable();
+            const days = DataManager.getAttributes().days;
+            const slots = DataManager.getAttributes().timeSlots;
+            
+            // Reconstruct a grid but only with my lectures
+            // We'll just show the full grid but highlight ours, OR show a list
+            // Let's keep the grid format but fade out others or replace text
+            
+            const myTimetable = JSON.parse(JSON.stringify(all)); // deep copy
+
+            days.forEach(day => {
+                slots.forEach(slot => {
+                    const cell = myTimetable[day] ? myTimetable[day][slot] : null;
+                    if (cell && cell.teacherId !== myTeacherId) {
+                        // Not my class
+                         myTimetable[day][slot] = null;
+                    }
+                });
+            });
+
+            App.renderTimetableGrid('my-timetable-container', myTimetable);
+        }
+
+        // Listen for shuffle logic updates
+        let lastShuffleCount = 0;
+        
+        function checkForUpdates() {
+            filterMyTimetable();
+            
+            const logs = DataManager.getShuffledLogs();
+            if (logs.length > lastShuffleCount) {
+                // New shuffle happened
+                const myNewSubs = logs.slice(lastShuffleCount).filter(l => l.newTeacher === currentUser.name || l.originalTeacher === currentUser.name);
+                if (myNewSubs.length > 0) {
+                     new bootstrap.Modal(document.getElementById('shuffleModal')).show();
+                }
+                lastShuffleCount = logs.length;
+            }
+        }
+
+        window.addEventListener('dataUpdated', checkForUpdates);
+        
+        // Initial load
+        lastShuffleCount = DataManager.getShuffledLogs().length;
+        filterMyTimetable();
+    </script>
+</body>
+</html>

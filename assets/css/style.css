@@ -1,0 +1,100 @@
+/* Main Styles */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --running-color: #e7f1ff;
+    --running-border: #0d6efd;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Auth Cards */
+.auth-card {
+    max-width: 400px;
+    margin: 80px auto;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dashboard Sidebar (Optional logic handled by BS5 offcanvas usually, but here fixed) */
+.sidebar {
+    min-height: 100vh;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Status Colors (Grid Cells) */
+.status-completed {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border-left: 5px solid #198754;
+}
+
+.status-running {
+    background-color: var(--running-color);
+    color: #084298;
+    border-left: 5px solid var(--running-border);
+    animation: pulse 2s infinite;
+}
+
+.status-upcoming {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.status-cancelled {
+    background-color: #f8d7da;
+    color: #842029;
+    text-decoration: line-through;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+    }
+}
+
+/* Timetable Grid */
+.timetable-container {
+    overflow-x: auto;
+}
+
+.timetable-table th,
+.timetable-table td {
+    vertical-align: middle;
+    text-align: center;
+    min-width: 150px;
+}
+
+/* Dashboard Widgets */
+.stat-card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .sidebar {
+        min-height: auto;
+        margin-bottom: 20px;
+    }
+}

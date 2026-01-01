@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CR Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <div id="navbar-container"></div>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="alert alert-info">
+                    <strong>CR Action Required:</strong> Please confirm if lectures are held/not held for attendance tracking.
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <h3>Mark Attendance</h3>
+                <div id="cr-timetable-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="markModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Lecture Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Lecture: <strong id="modalSubject"></strong></p>
+                    <p>Teacher: <strong id="modalTeacher"></strong></p>
+                    <hr>
+                    <p class="mb-3">Was this lecture conducted?</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="confirmStatus('held')">✅ Yes, Lecture Held</button>
+                        <button class="btn btn-danger" onclick="confirmStatus('not-held')">❌ No, Lecture Not Held</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/attendance.js"></script>
+    <script src="assets/js/app.js"></script>
+
+    <script>
+        let currentSelection = null;
+        let markModal = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            markModal = new bootstrap.Modal(document.getElementById('markModal'));
+        });
+
+        function renderCRTable() {
+            const container = document.getElementById('cr-timetable-container');
+            const data = DataManager.getData();
+            const timetable = data.timetable;
+            const days = data.days;
+            const slots = data.timeSlots;
+
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-bordered timetable-table">
+                        <thead class="table-light">
+                            <tr><th>Day / Time</th>${slots.map(s => `<th>${s}</th>`).join('')}</tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            days.forEach(day => {
+                html += `<tr><td class="fw-bold table-light">${day}</td>`;
+                slots.forEach((slot, index) => {
+                    const cell = timetable[day] && timetable[day][slot];
+                    if (!cell) {
+                        html += `<td>-</td>`;
+                        return;
+                    }
+
+                    // Check if already marked for today (Simulated Date)
+                    // We'll use a fixed Simulated Date key for demo since we haven't implemented full calendar
+                    const simDate = new Date().toISOString().split('T')[0]; 
+                    const existingRecord = DataManager.getAttendance().find(r => r.date === simDate && r.lectureId === cell.id);
+
+                    let statusBadge = '';
+                    if (existingRecord) {
+                        statusBadge = existingRecord.status === 'held' 
+                            ? '<span class="badge bg-success">Held</span>'
+                            : '<span class="badge bg-danger">Not Held</span>';
+                    } else {
+                        statusBadge = '<span class="badge bg-secondary">Pending</span>';
+                    }
+
+                    html += `
+                        <td class="position-relative" style="cursor:pointer;" onclick='openMarkModal(${JSON.stringify(cell)}, "${simDate}")'>
+                            <div class="fw-bold">${cell.subject}</div>
+                            <div class="small">${cell.teacherName}</div>
+                            ${statusBadge}
+                        </td>
+                    `;
+                });
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
+        window.openMarkModal = function(cell, date) {
+            currentSelection = { cell, date };
+            document.getElementById('modalSubject').textContent = cell.subject;
+            document.getElementById('modalTeacher').textContent = cell.teacherName;
+            markModal.show();
+        };
+
+        window.confirmStatus = function(status) {
+            if (!currentSelection) return;
+            
+            AttendanceManager.markLecture(
+                currentSelection.cell.id, 
+                currentSelection.date, 
+                status, 
+                'CR'
+            );
+            
+            markModal.hide();
+            renderCRTable();
+        };
+
+        window.addEventListener('dataUpdated', renderCRTable);
+        renderCRTable();
+    </script>
+</body>
+</html>
